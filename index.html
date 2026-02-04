@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You | Nigrotifa</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-pink: #ec4899;
+            --primary-red: #ef4444;
+            --glass: rgba(15, 10, 12, 0.85);
+            --slot-size: 100px;
+        }
+
+        body {
+            margin: 0;
+            background-color: #0c0a09;
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        h1, h2 { font-family: 'Playfair Display', serif; }
+
+        .special-font {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        /* Romantic Background */
+        .aurora-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2; overflow: hidden; filter: blur(80px); opacity: 0.7;
+        }
+
+        .aurora {
+            position: absolute; width: 150%; height: 150%; top: -25%; left: -25%;
+            background: 
+                radial-gradient(circle at 20% 30%, hsla(333, 80%, 40%, 0.5) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, hsla(350, 70%, 50%, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, hsla(320, 89%, 30%, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, hsla(0, 90%, 40%, 0.4) 0%, transparent 50%);
+            animation: aurora-flow 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes aurora-flow { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(8deg) scale(1.1); } }
+
+        .heart-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+        }
+
+        .floating-heart {
+            position: absolute; color: rgba(236, 72, 153, 0.3);
+            animation: floatUp 6s linear infinite;
+            font-size: 20px;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 28px;
+            display: none;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .active-card { display: block; }
+
+        .text-gradient {
+            background: linear-gradient(to right, #fce7f3, #f9a8d4, #ffffff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899 0%, #ef4444 100%);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(236, 72, 153, 0.4);
+        }
+
+        .btn-primary:hover { transform: translateY(-4px) scale(1.05); }
+
+        .progress-container {
+            position: fixed; top: 2rem; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 6px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px; overflow: hidden; z-index: 100;
+        }
+
+        #progress-bar {
+            width: 15%; height: 100%; background: linear-gradient(to right, #ec4899, #ef4444);
+            transition: width 0.6s ease;
+        }
+
+        /* Envelope Styles */
+        .envelope-wrapper { cursor: pointer; transition: transform 0.3s; }
+        .envelope {
+            position: relative; width: 280px; height: 180px; background: #fff5f7;
+            border-radius: 0 0 15px 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); margin: 40px auto;
+        }
+        .envelope::before {
+            content: ''; position: absolute; top: -90px; left: 0;
+            border-left: 140px solid transparent; border-right: 140px solid transparent;
+            border-bottom: 90px solid #ffe4e9; z-index: 5; transform-origin: bottom; transition: transform 0.6s 0.3s;
+        }
+        .envelope.open::before { transform: rotateX(180deg); z-index: 0; }
+        .envelope .heart { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 10; }
+
+        /* Slots Styles */
+        .slot-window {
+            display: flex; gap: 10px; background: rgba(255, 192, 203, 0.1);
+            padding: 10px; border-radius: 20px; overflow: hidden; 
+            height: var(--slot-size); border: 2px solid var(--primary-pink);
+            justify-content: center; margin: 20px auto; width: fit-content;
+        }
+        .reel { width: var(--slot-size); height: var(--slot-size); background: rgba(255,255,255,0.05); position: relative; border-radius: 10px; overflow: hidden; }
+        .strip { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; }
+        .symbol { width: var(--slot-size); height: var(--slot-size); display: flex; align-items: center; justify-content: center; }
+        .symbol img { width: 90%; height: 90%; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+        .jackpot-text { color: var(--primary-pink); text-shadow: 0 0 10px var(--primary-pink); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        #canvas-container { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div class="heart-bg" id="heart-bg"></div>
+    <div class="aurora-container"><div class="aurora"></div></div>
+    <div class="progress-container"><div id="progress-bar"></div></div>
+
+    <main class="w-full max-w-2xl z-10 p-4">
+        
+        <div id="step-1" class="glass-card active-card p-8 md:p-12 text-center">
+            <div id="envelope-container" class="envelope-wrapper" onclick="openLetter()">
+                <div id="envelope-main" class="envelope">
+                    <div class="heart">💌</div>
+                </div>
+                <p id="click-hint" class="text-pink-300 text-sm animate-pulse">Click the letter to open</p>
+            </div>
+
+            <div id="revealed-content" class="hidden">
+                <div class="text-6xl mb-6">❤️</div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">Hey Beautiful,</h1>
+                <p class="text-lg text-gray-300 mb-6 leading-relaxed">I built a little world for you. Sending a little extra love your way today, just to see that beautiful smile... 😊❤️</p>
+                
+                <p class="special-font text-2xl text-pink-300 mb-2">Will you be my valentine just for forever ♾️</p>
+                <p class="text-sm text-gray-400 mb-8 italic">If yes then click on</p>
+
+                <button onclick="nextStep(1.5)" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">Yes! ❤️</button>
+            </div>
+        </div>
+
+        <div id="step-1-5" class="glass-card p-8 md:p-12 text-center">
+            <div class="mb-6 flex justify-center">
+                <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=500" alt="Us" class="rounded-2xl shadow-2xl border-4 border-pink-500 max-w-[250px]">
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">Yay!</h1>
+            <p class="special-font text-3xl text-pink-300 mb-8">now we are married 💍❤️</p>
+            <button onclick="nextStep(2)" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">Continue our journey...</button>
+        </div>
+
+        <div id="step-2" class="glass-card p-8 md:p-12 text-center">
+            <div class="text-6xl mb-6">🎉</div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">Happy Valentine NIGROTIFA!</h1>
+            <p class="text-lg text-gray-300 mb-8 leading-relaxed">Waking up to a world where you exist? That’s already a win.</p>
+            <button onclick="nextStep(2.5)" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">There's more...</button>
+        </div>
+
+        <!-- NEW STEP: MY THOUGHTS NOW DAY -->
+        <div id="step-2-5" class="glass-card p-8 md:p-12 text-center">
+            <div class="text-6xl mb-6">💭</div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">MY THOUGHTS NOW DAY</h1>
+            <p class="text-xl text-pink-200 mb-6 italic leading-relaxed">"Honestly, every single day I find myself lost in thoughts of you.    "You know, every time I go back to the places where we made our memories, it feels like just yesterday we were having fun. It’s hard to put into words. ✨
+Do you remember when we were heading home and you couldn't run because of your shoes? We switched footwear—it felt just like a scene out of an anime.  Or when I accidentally got the bike stuck in the mud while you were sitting with me? 🏍️💨 I managed to pull us through, and we ended up having such a great ride through the market. 🛍️ Then there was the time you gave me that gift card and kissed me on the cheek. 💋
+I’ve never once cried out of happiness in my life before, but thinking of you and our memories makes me emotional. ❤️‍🩹🥺
+Babe—I will burn the world down if I don't get you. 
+ You are mine forever ♾️. We are true soulmates in this messed-up generation." 🖤 .....  And every moment with you feels like a dream I never want to wake up from."</p>
+            <p class="text-lg text-gray-300 mb-8 leading-relaxed">You are my everything, My beloved wife.. Nigrotifa. ❤️</p>
+            <button onclick="nextStep(3)" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">I have so much more to say...</button>
+        </div>
+
+        <div id="step-3" class="glass-card p-6 md:p-10">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gradient">Out of All the Infinite Things I Adore About You...</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-white/5 p-4 rounded-xl md:col-span-2">
+                    <h3 class="text-pink-400 font-bold mb-1">✨ Your Unmatched Kindness</h3>
+                    <p class="text-sm text-gray-400">The genuine warmth you show to everyone is something truly rare and beautiful.</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl">
+                    <h3 class="text-pink-400 font-bold mb-1">😊 That Smile</h3>
+                    <p class="text-sm text-gray-400">The way your smile feels like home. It's the one thing that always brings me peace.</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl">
+                    <h3 class="text-pink-400 font-bold mb-1">🌟 Your LOOK</h3>
+                    <p class="text-sm text-gray-400">The way you look... yeah, that should be illegal.</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl md:col-span-2">
+                    <h3 class="text-pink-400 font-bold mb-1">❤️ Your Kind HEART</h3>
+                    <p class="text-sm text-gray-400">You have a heart that makes everyone around you want to be better.</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl md:col-span-2 text-center border border-pink-500/30">
+                    <h3 class="text-pink-400 font-bold mb-1">❤️ US</h3>
+                    <p class="text-sm text-gray-400">STAND PROUD, WE ARE GOATED AS FUCK and perfectly balancing each other's weirdness.</p>
+                </div>
+            </div>
+            <div class="flex justify-center">
+                <button onclick="nextStep(4)" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">Try Your Luck</button>
+            </div>
+        </div>
+
+        <div id="step-4" class="glass-card p-8 md:p-12 text-center">
+            <h1 class="text-4xl font-bold mb-4 text-gradient">❤️ Sweet Slots ❤️</h1>
+            <p class="text-gray-300 mb-4">Spin to find the jackpot of my heart!</p>
+            <div class="slot-window">
+                <div class="reel"><div class="strip" id="strip1"></div></div>
+                <div class="reel"><div class="strip" id="strip2"></div></div>
+                <div class="reel"><div class="strip" id="strip3"></div></div>
+            </div>
+            <button id="spinBtn" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider mb-4">SPIN! 💘</button>
+            <div id="result" class="h-12 text-xl font-bold text-pink-400 mb-6"></div>
+            <p id="debugHint" class="text-[10px] opacity-20"></p>
+            <button id="slotNextBtn" onclick="nextStep(5)" class="hidden mx-auto btn-primary px-8 py-3 rounded-full font-bold text-sm text-white uppercase">One last thing...</button>
+        </div>
+
+        <div id="step-5" class="glass-card p-8 md:p-12 text-center">
+            <div class="text-6xl mb-6">🎂</div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">My Cute CUP CAKE</h1>
+            <p class="text-lg text-gray-300 mb-8 leading-relaxed">I hope your future hits you with all the love that I am sending you from across the sea, success, and happiness you’ve earned. I know you are capable of great things so don't hold back you nigrotifa.</p>
+            <div id="final-message" class="hidden mb-8"><h2 class="text-2xl font-bold text-pink-400">Happy Valentine's Day, MY WIFEY / NIGROTIFA! ❤️</h2></div>
+            <button id="celebrate-btn" onclick="startFinale()" class="btn-primary px-10 py-4 rounded-full font-bold text-white uppercase tracking-wider">LOVE YOU !</button>
+        </div>
+
+    </main>
+<script>
+        let currentStep = 1;
+
+        // Background Hearts
+        function createHearts() {
+            const container = document.getElementById('heart-bg');
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.innerText = ['❤️', '💖', '💕', '💗'][Math.floor(Math.random() * 4)];
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                container.appendChild(heart);
+                setTimeout(() => heart.remove(), 6000);
+            }, 600);
+        }
+        createHearts();
+
+        function openLetter() {
+            const envelope = document.getElementById('envelope-main');
+            const container = document.getElementById('envelope-container');
+            const revealed = document.getElementById('revealed-content');
+            const hint = document.getElementById('click-hint');
+            envelope.classList.add('open');
+            hint.style.opacity = '0';
+            setTimeout(() => {
+                gsap.to(container, { height: 0, scale: 0, opacity: 0, duration: 0.5, onComplete: () => {
+                    container.style.display = 'none';
+                    revealed.classList.remove('hidden');
+                    gsap.fromTo(revealed, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8 });
+                }});
+            }, 1000);
+        }
+
+        function nextStep(step) {
+            // Correct the ID selection for Steps with decimals
+            const formatId = (s) => s.toString().replace('.', '-');
+            const currentId = `step-${formatId(currentStep)}`;
+            const nextId = `step-${formatId(step)}`;
+            
+            const currentEl = document.getElementById(currentId);
+            const nextEl = document.getElementById(nextId);
+
+            // Progress bar update (7 Total Viewpoints now)
+            const totalSteps = 7; 
+            let progressVal;
+            if (step === 1.5) progressVal = 2;
+            else if (step === 2) progressVal = 3;
+            else if (step === 2.5) progressVal = 4;
+            else if (step === 3) progressVal = 5;
+            else if (step === 4) progressVal = 6;
+            else if (step === 5) progressVal = 7;
+            else progressVal = step;
+
+            document.getElementById('progress-bar').style.width = `${(progressVal / totalSteps) * 100}%`;
+
+            gsap.to(currentEl, { opacity: 0, y: -20, scale: 0.95, duration: 0.5, onComplete: () => {
+                currentEl.style.display = 'none';
+                nextEl.style.display = 'block';
+                if(step === 4) initSlots();
+                gsap.fromTo(nextEl, { opacity: 0, y: 20, scale: 1.05 }, { opacity: 1, y: 0, scale: 1, duration: 0.6 });
+            }});
+            currentStep = step;
+        }
+
+        const photos = ["https://picsum.photos/id/101/120/120", "https://picsum.photos/id/102/120/120", "https://picsum.photos/id/103/120/120", "https://picsum.photos/id/104/120/120", "https://picsum.photos/id/106/120/120"];
+        let spinCount = 0;
+        let winTarget = Math.floor(Math.random() * (12 - 3 + 1)) + 3;
+        const ITEM_HEIGHT = 100; 
+
+        function initSlots() {
+            const strips = [document.getElementById('strip1'), document.getElementById('strip2'), document.getElementById('strip3')];
+            strips.forEach(strip => {
+                strip.innerHTML = '';
+                for (let i = 0; i < 50; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'symbol';
+                    div.innerHTML = `<img src="${photos[i % photos.length]}" alt="slot">`;
+                    strip.appendChild(div);
+                }
+            });
+            document.getElementById('debugHint').innerText = `Secret: Next win on spin #${winTarget}`;
+        }
+
+        async function spin() {
+            const spinBtn = document.getElementById('spinBtn');
+            const resultDiv = document.getElementById('result');
+            const strips = [document.getElementById('strip1'), document.getElementById('strip2'), document.getElementById('strip3')];
+            spinCount++;
+            spinBtn.disabled = true;
+            resultDiv.innerHTML = "";
+            const isJackpot = (spinCount === winTarget);
+            const forcedIdx = Math.floor(Math.random() * photos.length);
+
+            const promises = strips.map((strip, i) => {
+                return new Promise(resolve => {
+                    let landingIdx = isJackpot ? 40 + forcedIdx : Math.floor(Math.random() * 35) + 5;
+                    const duration = 2 + (i * 0.5); 
+                    strip.style.transition = 'none';
+                    strip.style.transform = `translateY(0px)`;
+                    strip.offsetHeight; 
+                    strip.style.transition = `transform ${duration}s cubic-bezier(0.15, 0, 0.15, 1)`;
+                    strip.style.transform = `translateY(-${landingIdx * ITEM_HEIGHT}px)`;
+                    setTimeout(() => resolve(strip.children[landingIdx].querySelector('img').src), duration * 1000);
+                });
+            });
+
+            const results = await Promise.all(promises);
+            if (results[0] === results[1] && results[1] === results[2]) {
+                resultDiv.innerHTML = "<span class='jackpot-text'>💖 YOU'RE MY JACKPOT! 💖</span>";
+                document.getElementById('slotNextBtn').classList.remove('hidden');
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            } else {
+                resultDiv.innerText = "Try again, sweetheart!";
+                spinBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('spinBtn').addEventListener('click', spin);
+
+        let scene, camera, renderer, hearts = [];
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(5, 5); heartShape.bezierCurveTo(5, 5, 4, 0, 0, 0);
+            heartShape.bezierCurveTo(-6, 0, -6, 7, -6, 7); heartShape.bezierCurveTo(-6, 11, -3, 15.4, 5, 19);
+            heartShape.bezierCurveTo(12, 15.4, 16, 11, 16, 7); heartShape.bezierCurveTo(16, 7, 16, 0, 10, 0);
+            const geometry = new THREE.ExtrudeGeometry(heartShape, { depth: 2, bevelEnabled: true });
+            for (let i = 0; i < 25; i++) {
+                const heart = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xec4899 }));
+                heart.position.set((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*50);
+                heart.scale.set(0.1, 0.1, 0.1); heart.rotation.x = Math.PI;
+                scene.add(heart); hearts.push(heart);
+            }
+            const light = new THREE.DirectionalLight(0xffffff, 1); light.position.set(0, 0, 10); scene.add(light);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5)); camera.position.z = 50;
+        }
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            hearts.forEach(h => { h.rotation.y += 0.01; });
+            renderer.render(scene, camera);
+        }
+
+        function startFinale() {
+            document.getElementById('celebrate-btn').classList.add('hidden');
+            document.getElementById('final-message').classList.remove('hidden');
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+
+        window.addEventListener('resize', () => {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+
+        initThree(); animateThree();
+    </script>
+</body>
+</html>
